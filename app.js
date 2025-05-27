@@ -139,40 +139,42 @@ function guardarRegistrosEnLocalStorage() {
 form.addEventListener('submit', function (e) {
   e.preventDefault();
 
-const horaFinal = `${horaHH.value}:${horaMM.value} ${horaAMPM.value}`;
-const habitacion = habitacionInput.value;
-const total = (parseInt(tiempoSelect.value) + parseInt(extrasSelect.value)) * tarifaPorHora;
+  const registro = {
+    fecha: fechaInput.value,
+    hora: `${horaHH.value}:${horaMM.value} ${horaAMPM.value}`,
+    habitacion: habitacionInput.value,
+    tiempo: tiempoSelect.value,
+    extras: extrasSelect.value,
+    notas: notasInput.value,
+    total: (parseInt(tiempoSelect.value) + parseInt(extrasSelect.value)) * tarifaPorHora
+  };
 
-const registro = {
-  fecha: fechaInput.value,
-  hora: horaFinal,
-  habitacion: habitacion,
-  tiempo: tiempoSelect.value,
-  extras: extrasSelect.value,
-  notas: notasInput.value,
-  total: total
-};
+  fetch("https://script.google.com/macros/s/AKfycby128U8FrMzmJKOdc_0Xg83YoaowSTuL-9SmwwlPGWv_xshD8kXgczn5g00Mx74cK6R/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(registro)
+  })
+  .then(response => response.text())
+  .then(text => {
+    console.log("✅ Enviado a Google Sheets:", text);
+  })
+  .catch(error => {
+    console.error("❌ Error al enviar a Google Sheets:", error);
+  });
 
-fetch("https://script.google.com/macros/s/AKfycbwefsFYU0F3x7uJUBZhyMEM9kFIpXfC1vggnI_fuoRyVwmZoTuyLRJjAb5uAu1FrSY/exec", {
-  method: "POST",
-  body: JSON.stringify(registro),
-  headers: {
-    "Content-Type": "application/json"
+  const btn = botonesHabitaciones[registro.habitacion];
+  const existente = registros.find(r => r.habitacion === registro.habitacion);
+
+  if (existente) {
+    Object.assign(existente, registro);
+  } else {
+    registros.push(registro);
   }
-})
-.then(response => response.text())
-.then(text => {
-  alert("Registro guardado en Google Sheets ✅");
-  volverAPantallaHabitaciones();
-})
-.catch(error => {
-  console.error(error);
-  alert("Error al guardar. Verificá tu conexión o el script.");
-});
 
   guardarRegistrosEnLocalStorage();
 
-  const btn = botonesHabitaciones[habitacion];
   if (btn) {
     btn.classList.remove('disponible');
     btn.classList.add('ocupada');
